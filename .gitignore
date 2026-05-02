@@ -1,0 +1,15 @@
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Python Virtual Machine / Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# FastAPI / Uvicorn Logs
+*.log
+
+.vscode/
