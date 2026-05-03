@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime
+from sqlalchemy import Column, String, Integer, DateTime, Float, JSON
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -8,16 +8,13 @@ class CanonicalRecord(Base):
     raw_id = Column(String, index=True)
     source_dept = Column(String, index=True)
     biz_name_raw = Column(String)
-    biz_name_clean = Column(String, index=True)
+    biz_name_norm = Column(String, index=True)
     address_raw = Column(String)
-    pin_code = Column(String, index=True)
-    city = Column(String)
-    state = Column(String)
+    pin = Column(String, index=True)
+    pan = Column(String, index=True)
+    gst = Column(String, index=True)
     phone = Column(String)
-    pan_number = Column(String, index=True)
-    gstin = Column(String, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 # Updated source models to match your database schema
 class Shop(Base):
@@ -29,6 +26,7 @@ class Shop(Base):
     pin = Column(String)
     pan = Column(String)
     gst = Column(String)
+    phone = Column(String)
 
 class Factory(Base):
     __tablename__ = "factories"
@@ -39,6 +37,7 @@ class Factory(Base):
     pin = Column(String)
     pan = Column(String)
     gst = Column(String)
+    phone = Column(String)
 
 class Bescom(Base):
     __tablename__ = "bescom"
@@ -48,6 +47,8 @@ class Bescom(Base):
     address_raw = Column(String)
     pin = Column(String)
     pan = Column(String)
+    gst = Column(String)
+    phone = Column(String)
 
 class UBIDRegistry(Base):
     __tablename__ = "ubid_registry"
