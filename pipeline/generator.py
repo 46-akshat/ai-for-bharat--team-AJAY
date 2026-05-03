@@ -40,7 +40,7 @@ def generate_data():
             "pin": random.choice(KARNATAKA_PINS),
             "pan": fake.bothify(text='?????####?').upper(),
             "gst": fake.bothify(text='29?????####?1Z?').upper(),
-            "phone": fake.phone_number()
+            "phone": fake.numerify(text='##########')
         })
 
     # 2. INJECT FALSE POSITIVES (Same PIN, Similar Name, Different PAN)
@@ -56,7 +56,7 @@ def generate_data():
             "pin": base['pin'], # TRICK: Same PIN
             "pan": fake.bothify(text='?????####?').upper(), # TRICK: Different PAN
             "gst": fake.bothify(text='29?????####?1Z?').upper(),
-            "phone": fake.phone_number()
+            "phone": fake.numerify(text='##########')
         })
 
     depts = {"factories": "FAC", "shops": "SHP", "bescom": "BES"}

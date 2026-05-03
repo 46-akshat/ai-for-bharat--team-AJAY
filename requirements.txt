@@ -25,12 +25,14 @@ pandas==2.3.3
 psycopg2-binary==2.9.12
 pydantic==2.13.3
 pydantic_core==2.46.3
+pybind11==3.0.4
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 pytz==2026.1.post1
 PyYAML==6.0.3
 referencing==0.37.0
 rpds-py==0.30.0
+setuptools==82.0.1
 six==1.17.0
 splink==4.0.16
 SQLAlchemy==2.0.49

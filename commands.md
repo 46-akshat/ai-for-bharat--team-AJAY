@@ -59,3 +59,18 @@ uvicorn app.main:app --reload(if already in the folder)
 http://127.0.0.1:8000/docs
 
 
+
+## Compile Trie Module (C++ to Python)
+Ensure your virtual environment is activated and you are in the directory containing `setup.py` (e.g., the `pipeline/` directory).
+
+- Windows:
+  ```cmd
+  pip install pybind11 setuptools
+  python setup.py build_ext --inplace
+  ```
+
+- macOS / Linux:
+  ```bash
+  pip install pybind11 setuptools
+  python3 setup.py build_ext --inplace
+  ```
