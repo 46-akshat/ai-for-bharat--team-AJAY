@@ -19,7 +19,7 @@ class CanonicalRecord(Base):
 # Updated source models to match your database schema
 class Shop(Base):
     __tablename__ = "shops"
-    id = Column(Integer, primary_key=True, index=True) # Ensure you ran the ALTER TABLE SQL!
+    id = Column(Integer, primary_key=True, index=True)
     raw_id = Column(String)
     biz_name_raw = Column(String)
     address_raw = Column(String)
@@ -52,43 +52,39 @@ class Bescom(Base):
 
 class UBIDRegistry(Base):
     __tablename__ = "ubid_registry"
-    
     ubid = Column(String, primary_key=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    status = Column(String) 
+    status = Column(String, nullable=False) # active/dormant/closed
     confidence_score = Column(Float)
     last_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
 class RecordUBIDLinkage(Base):
     __tablename__ = "record_ubid_linkage"
-    
-    id = Column(Integer, primary_key=True, index=True) 
-    ubid = Column(String, index=True)   
-    raw_id = Column(String, index=True) 
+    id = Column(Integer, primary_key=True, index=True)
+    ubid = Column(String, index=True) # FK to ubid_registry
+    raw_id = Column(String, index=True) # FK to canonical_record
     source_dept = Column(String)
     match_score = Column(Float)
-    link_method = Column(String) 
+    link_method = Column(String) # auto/human
     reviewer_id = Column(String, nullable=True)
     linked_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class ReviewQueue(Base):
     __tablename__ = "review_queue"
-    
     pair_id = Column(String, primary_key=True, index=True)
-    record_a_id = Column(String, index=True)
-    record_b_id = Column(String, index=True)
+    record_a_id = Column(String, index=True) # FK to canonical_record
+    record_b_id = Column(String, index=True) # FK to canonical_record
     splink_score = Column(Float)
-    bayes_factors = Column(JSON) 
-    status = Column(String) 
+    bayes_factors = Column(JSON) # Per-field Bayes factor evidence
+    status = Column(String, nullable=False) # pending/merged/separated/escalated
     reviewer_id = Column(String, nullable=True)
     decided_at = Column(DateTime(timezone=True), nullable=True)
 
 class Event(Base):
     __tablename__ = "event"
-    
     event_id = Column(String, primary_key=True, index=True)
     ubid = Column(String, index=True)
     event_type = Column(String)
-    signal_weight = Column(String) 
+    signal_weight = Column(String) # HIGH/MED/LOW
     source_dept = Column(String)
     occurred_at = Column(DateTime(timezone=True), server_default=func.now())
