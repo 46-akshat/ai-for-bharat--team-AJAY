@@ -84,28 +84,37 @@ def submit_review_decision(pair_id: str, decision: ReviewDecision, db: Session =
     if decision.decision not in ["merge", "separate", "escalate"]:
         raise HTTPException(status_code=400, detail="Invalid decision")
         
-    import datetime
+    from datetime import datetime as dt
     pair.status = decision.decision + "d" if decision.decision in ["merge", "separate"] else "escalated"
     pair.reviewer_id = decision.reviewer_id
-    pair.decided_at = datetime.datetime.utcnow()
+    pair.decided_at = dt.utcnow()
     
-    # If merged, we need to assign a UBID. Real logic would check if either already has a UBID and group them.
     if decision.decision == "merge":
-        # Simplified: generate new UBID for them
-        count = db.query(models.UBIDRegistry).count()
-        ubid_val = f"KA-UBID-{(count + 1):05d}"
+        # Generate next UBID using MAX (not COUNT) to avoid duplicates
+        from sqlalchemy import func
+        max_ubid = db.query(func.max(models.UBIDRegistry.ubid)).scalar()
+        if max_ubid is None:
+            ubid_val = "KA-UBID-00001"
+        else:
+            current_max = int(max_ubid.split('-')[-1])
+            ubid_val = f"KA-UBID-{(current_max + 1):05d}"
         
         registry = models.UBIDRegistry(ubid=ubid_val, status="active", confidence_score=pair.splink_score)
         db.add(registry)
         db.flush()
         
-        link_a = models.RecordUBIDLinkage(ubid=ubid_val, raw_id=pair.record_a_id, match_score=pair.splink_score, link_method="human", reviewer_id=decision.reviewer_id)
-        link_b = models.RecordUBIDLinkage(ubid=ubid_val, raw_id=pair.record_b_id, match_score=pair.splink_score, link_method="human", reviewer_id=decision.reviewer_id)
+        # Helper to map raw_id prefix to department name
+        def get_dept(raw_id):
+            prefix = raw_id.split('_')[0] if '_' in raw_id else ''
+            return {"FAC": "factories", "SHP": "shops", "BES": "bescom"}.get(prefix, "unknown")
+        
+        link_a = models.RecordUBIDLinkage(ubid=ubid_val, raw_id=pair.record_a_id, source_dept=get_dept(pair.record_a_id), match_score=pair.splink_score, link_method="human", reviewer_id=decision.reviewer_id)
+        link_b = models.RecordUBIDLinkage(ubid=ubid_val, raw_id=pair.record_b_id, source_dept=get_dept(pair.record_b_id), match_score=pair.splink_score, link_method="human", reviewer_id=decision.reviewer_id)
         db.add(link_a)
         db.add(link_b)
         
     db.commit()
-    return {"message": f"Pair marked as {pair.status}"}
+    return {"message": f"Pair marked as {pair.status}", "ubid": ubid_val if decision.decision == "merge" else None}
 
 @app.get("/api/ubids")
 def get_ubids(limit: int = 100, db: Session = Depends(get_db)):
