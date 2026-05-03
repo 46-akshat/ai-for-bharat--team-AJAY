@@ -2,6 +2,7 @@ import pandas as pd
 import random
 from faker import Faker
 import uuid
+import os
 
 
 # we need to build a messy data/broken data to test the matching engine
@@ -80,6 +81,7 @@ def generate_data():
     # Save to CSVs
     for dept, data in results.items():
         df = pd.DataFrame(data)
+        os.makedirs("data",exist_ok=True)
         df.to_csv(f"data/{dept}.csv", index=False)
         print(f" Generated {len(df)} records for {dept}.csv")
 

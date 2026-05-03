@@ -46,6 +46,20 @@
   pip freeze > requirements.txt
   ```
 
+## Install the database and tools
+pip install sqlalchemy psycopg2-binary pandas python-dotenv
+
+## Run the main app
+uvicorn backend.app.main:app --reload
+uvicorn app.main:app --reload(if already in the folder)
+
+
+
+## Check for api
+http://127.0.0.1:8000/docs
+
+
+
 ## Compile Trie Module (C++ to Python)
 Ensure your virtual environment is activated and you are in the directory containing `setup.py` (e.g., the `pipeline/` directory).
 
