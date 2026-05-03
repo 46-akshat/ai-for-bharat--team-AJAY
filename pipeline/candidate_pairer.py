@@ -15,7 +15,7 @@ def run(directory_path="./data"):
             try:
                 header = next(reader)
                 for row in reader:
-                    if len(row) > 5:
+                    if len(row[5]) > 0:
                         templist =[]
                         templist.append(row[0])
                         templist.append(row[5])
