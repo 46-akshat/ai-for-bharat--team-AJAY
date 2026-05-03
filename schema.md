@@ -4,10 +4,14 @@ This file contains the canonical data structures for the 5-day prototype sprint.
 
 ## 1. Core Architecture Diagram
 *Copy this block and paste it into [PlantText](https://www.planttext.com/) to view the visual ERD.*
-```plantuml
-@startuml
+```@startuml
+' Visual styling for a clean, modern look
 hide circle
 skinparam linetype ortho
+skinparam EntityBackgroundColor #F9F9F9
+skinparam EntityBorderColor #333333
+
+' --- Tables ---
 
 entity "Canonical_Record" as canonical {
   *raw_id : VARCHAR [PK]
@@ -65,8 +69,19 @@ entity "Event" as event {
   occurred_at : TIMESTAMP
 }
 
-canonical "1" ||--o{ "0..*" review : "record_a_id / record_b_id"
-canonical "1" ||--o| "0..1" linkage : "raw_id"
-ubid_reg "1" ||--o{ "1..*" linkage : "ubid"
-ubid_reg "1" ||--o{ "0..*" event : "ubid"
+' --- Relationships (with explicit Cardinality Mapping) ---
+
+' 1 to Many: A Canonical Record can be evaluated in multiple review pairs
+canonical "1" ||--o{ "0..*" review : "1 to Many (as record A)"
+canonical "1" ||--o{ "0..*" review : "1 to Many (as record B)"
+
+' 1 to 1: A Canonical Record gets linked to exactly one UBID record in the linkage table
+canonical "1" ||--o| "0..1" linkage : "1 to 1 (raw_id)"
+
+' 1 to Many: A single UBID in the registry links to multiple raw records
+ubid_reg "1" ||--o{ "1..*" linkage : "1 to Many (ubid)"
+
+' 1 to Many: A single UBID has an evidence timeline of multiple events
+ubid_reg "1" ||--o{ "0..*" event : "1 to Many (ubid)"
+
 @enduml
