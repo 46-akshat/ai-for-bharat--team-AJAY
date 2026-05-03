@@ -1,23 +1,18 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <algorithm>
 namespace py = pybind11;
 using namespace std;
 
-int add(int i, int j) {
-    cout << "adding  " << i << " " << j << endl;
-    return i + j;
-}
 
-PYBIND11_MODULE(fast_math, m) {
-    m.doc() = "A simple C++ extension module for Python";
-    m.def("add", &add, "A function that adds two numbers");
-}
-
+// 26 alpha + 10 digits = 36
 class MyTrie {
     struct TrieNode {
         TrieNode* children[36]{};
-        int count = 0;
+        vector<string> uri;
     };
 
     int getIndex(char c) {
@@ -39,8 +34,11 @@ class MyTrie {
     TrieNode* root;
 
     void display(TrieNode* curr, string& s) {
-        if (curr->count > 0)
-            cout << s << " -> " << (curr->count) << endl;
+        if ((curr->uri).size() > 0) {
+            cout << s << " : ";
+            for (auto i : curr->uri) cout << i << ", ";
+            cout << endl;
+        }
 
         for (int i = 0; i < 36; i++) {
             if (curr->children[i] != nullptr) {
@@ -64,7 +62,8 @@ class MyTrie {
 
     ~MyTrie() { clear(root); }
 
-    void insertWord(const string& word) {
+    void insertWord(vector<vector<string>>& candidatePairs, const string& word,
+                    const string& id) {
         TrieNode* curr = root;
 
         for (int i = 0; i < word.size(); i++) {
@@ -76,7 +75,13 @@ class MyTrie {
             }
             curr = curr->children[index];
         }
-        curr->count++;
+
+        if (curr->uri.size() > 0) {
+            for (auto prevUri : curr->uri) {
+                candidatePairs.push_back({id, prevUri});
+            }
+        }
+        (curr->uri).push_back(id);
     }
 
     void displayTrieWords() {
@@ -86,16 +91,38 @@ class MyTrie {
     }
 };
 
-int main() {
-    MyTrie tr = MyTrie();
-    int n;
-    cin >> n;
-    while (n--) {
-        string gst;
-        cin >> gst;
-        tr.insertWord(gst);
+void removeDuplicates(vector<vector<string>>& arr) {
+    if (arr.size() <= 1)
+        return;
+
+    int count = 1;
+    int freshPosition = 1;
+
+    for (int i = 1; i < arr.size(); i++) {
+        if (arr[i] != arr[i - 1]) {
+            arr[freshPosition] = arr[i];
+            freshPosition++;
+            count++;
+        }
     }
 
-    tr.displayTrieWords();
-    return 0;
+    arr.resize(count);
+}
+
+vector<vector<string>> get_candidate_pairs(const vector<vector<string>>& data) {
+    MyTrie tr = MyTrie();
+    vector<vector<string>> candidatePairs;
+    for (int i = 0; i < data.size(); i++) {
+        if (data[i].size() >= 2) {
+            tr.insertWord(candidatePairs, data[i][1], data[i][0]);
+        }
+    }
+    sort(candidatePairs.begin(), candidatePairs.end());
+    removeDuplicates(candidatePairs);
+    return candidatePairs;
+}
+
+PYBIND11_MODULE(trie_module, m) {
+    m.doc() = "Trie module for candidate pair matching";
+    m.def("get_candidate_pairs", &get_candidate_pairs, "Get candidate pairs from a list of strings");
 }

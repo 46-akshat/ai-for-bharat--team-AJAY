@@ -7,8 +7,8 @@ INCLUDES = $(shell python3 -m pybind11 --includes)
 EXTENSION = $(shell python3-config --extension-suffix)
 
 # Target and source files
-TARGET = fast_math$(EXTENSION)
-SRC = adder.cpp
+TARGET = trie_module$(EXTENSION)
+SRC = trie.cpp
 
 # Default rule
 all: $(TARGET)
