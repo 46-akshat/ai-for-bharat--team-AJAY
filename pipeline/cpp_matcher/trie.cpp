@@ -125,6 +125,28 @@ void removeDuplicates(vector<pair<int64_t, int64_t>>& arr) {
     arr.resize(count);
 }
 
+inline void trim_in_place(std::string& str) {
+    constexpr const char* whitespace = " \t\n\r\f\v";
+
+    // 1. Trim trailing whitespace first (Right trim)
+    size_t end = str.find_last_not_of(whitespace);
+    if (end == std::string::npos) {
+        str.clear();  // The string is entirely whitespace
+        return;
+    }
+    str.erase(
+        end +
+        1);  // Erase from the end of the actual text to the end of the string
+
+    // 2. Trim prevailing whitespace (Left trim)
+    size_t start = str.find_first_not_of(whitespace);
+    if (start > 0) {
+        str.erase(
+            0,
+            start);  // Erase from the beginning to the start of the actual text
+    }
+}
+
 vector<pair<int64_t, int64_t>> get_candidate_pairs(
     const vector<BusinessRecord>& data) {
     // TODO : Modify the implementation to consider only the first few
@@ -147,6 +169,7 @@ vector<pair<int64_t, int64_t>> get_candidate_pairs(
         // attributes[5] = data[i].address_norm;
 
         for (int j = 0; j < totalAttributes; j++) {
+            trim_in_place(attributes[j]);
             if (attributes[j].size() > 0)
                 tries[j].insertWord(all_candidate_pairs[j], attributes[j], uri);
         }
