@@ -39,11 +39,16 @@ def normalize_data():
     combined_df = pd.concat(all_dfs, ignore_index=True)
 
     # Create new columns for the clean data
-    combined_df['biz_name_norm'] = combined_df['biz_name_raw'].apply(clean_text)
-    combined_df['address_norm'] = combined_df['address_raw'].apply(clean_text)
+    combined_df['biz_name_norm'] = combined_df['biz_name_raw'].apply(clean_text).astype('string')
+    combined_df['address_norm'] = combined_df['address_raw'].apply(clean_text).astype('string')
 
     # Drop the raw columns
     combined_df = combined_df.drop(columns=['biz_name_raw', 'address_raw'])
+
+    # Cast all remaining columns to string except URI
+    for col in combined_df.columns:
+        if col != 'uri':
+            combined_df[col] = combined_df[col].astype('string')
 
     # Create a 64-bit integer URI for each row (safe for Parquet BIGINT)
     combined_df['uri'] = [random.getrandbits(63) for _ in range(len(combined_df))]
