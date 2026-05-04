@@ -18,11 +18,7 @@ def run_scoring_engine():
     try:
         con.execute("""
             CREATE OR REPLACE VIEW master_records AS 
-            SELECT * FROM read_parquet('data/norm_factories.parquet')   
-            UNION ALL
-            SELECT * FROM read_parquet('data/norm_shops.parquet')       
-            UNION ALL
-            SELECT * FROM read_parquet('data/norm_bescom.parquet')      
+            SELECT * FROM read_parquet('data/global_normalized.parquet')   
         """)
         
         con.execute("""
@@ -35,7 +31,7 @@ def run_scoring_engine():
         print(f"Loaded {count_records} master records.")
         print(f"Loaded {count_pairs} highly-probable candidate pairs from Trie engine.")
     except duckdb.IOException as e:
-        print(f"Error loading files. Ensure candidate_pairer.py has run successfully!\nDetails: {e}")
+        print(f"Error loading files. Ensure candidate_pairer.py and the global normalization have run successfully!\nDetails: {e}")
         return
 
     # SPLINK SETTINGS
