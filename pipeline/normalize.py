@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import uuid
 import duckdb
+import random
 
 def clean_text(text):
     """Converts text to lowercase and removes all punctuation."""
@@ -44,8 +45,8 @@ def normalize_data():
     # Drop the raw columns
     combined_df = combined_df.drop(columns=['biz_name_raw', 'address_raw'])
 
-    # Create a URI for each row
-    combined_df['uri'] = [uuid.uuid4().int for _ in range(len(combined_df))]
+    # Create a 64-bit integer URI for each row (safe for Parquet BIGINT)
+    combined_df['uri'] = [random.getrandbits(63) for _ in range(len(combined_df))]
 
     # Connect to DuckDB and create a parquet file
     output_file = "data/normalized_records.parquet"
