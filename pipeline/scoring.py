@@ -1,105 +1,130 @@
-import os                                      
-import warnings                                
-import duckdb                                  
-from splink import DuckDBAPI, Linker           
-import splink.comparison_library as cl         
+import os
+import warnings
+import duckdb
+from splink import DuckDBAPI, Linker
+import splink.comparison_library as cl
 
-warnings.filterwarnings("ignore")              
+warnings.filterwarnings("ignore")
 
 def run_scoring_engine():
     print("\n[KA-UBID] Initializing Scoring Engine...")
 
-    # Running DuckDB in memory
-    print("Connecting to in-memory DuckDB instance...")
-    con = duckdb.connect(database=':memory:')  
-    db_api = DuckDBAPI(connection=con)         # Establish connection bw DuckDB & Splink
+    con = duckdb.connect(database=':memory:')
+    db_api = DuckDBAPI(connection=con)
 
-    # Loading normalized files & trie edges
+    # 1. Load Data with Dummy Column Injection
     try:
+        # THE FIX: We cast dummy uri1 and uri2 columns so Splink's SQL parser 
+        # doesn't panic when it sees them in the subquery.
         con.execute("""
             CREATE OR REPLACE VIEW master_records AS 
-            SELECT * FROM read_parquet('data/global_normalized.parquet')   
+            SELECT 
+                *, 
+                CAST(NULL AS BIGINT) AS uri1, 
+                CAST(NULL AS BIGINT) AS uri2 
+            FROM read_parquet('data/normalized_records.parquet')
         """)
         
         con.execute("""
             CREATE OR REPLACE VIEW candidate_pairs AS 
-            SELECT * FROM read_parquet('data/candidate_pairs.parquet')  
+            SELECT uri1, uri2 FROM read_parquet('data/candidate_pairs.parquet')
         """)
         
-        count_records = con.execute("SELECT COUNT(*) FROM master_records").fetchone()[0] # Count total entities
-        count_pairs = con.execute("SELECT COUNT(*) FROM candidate_pairs").fetchone()[0]  # Count total edges
+        count_records = con.execute("SELECT COUNT(*) FROM master_records").fetchone()[0]
+        count_pairs = con.execute("SELECT COUNT(*) FROM candidate_pairs").fetchone()[0]
         print(f"Loaded {count_records} master records.")
-        print(f"Loaded {count_pairs} highly-probable candidate pairs from Trie engine.")
+        print(f"Loaded {count_pairs} candidate pairs from C++ Trie engine.")
+        
     except duckdb.IOException as e:
-        print(f"Error loading files. Ensure candidate_pairer.py and the global normalization have run successfully!\nDetails: {e}")
+        print(f"Error loading files. Ensure C++ candidate_pairer.py and normalization have run!\nDetails: {e}")
         return
 
-    # SPLINK SETTINGS
+    # 2. Splink Settings
     settings = {
-        "link_type": "dedupe_only",             # finding duplicates across the combined dataset
-        "unique_id_column_name": "raw_id",      # The primary key to track entities
+        "link_type": "dedupe_only",
+        "unique_id_column_name": "uri", 
         
-        # Using Candidate-Pairs
+        # DuckDB Tuple-IN Hash Join
         "blocking_rules_to_generate_predictions": [
-            "EXISTS (SELECT 1 FROM candidate_pairs cp WHERE cp.id_l = l.raw_id AND cp.id_r = r.raw_id)" # Only score what the Trie found
+            "(l.uri, r.uri) IN (SELECT uri1, uri2 FROM candidate_pairs)"
         ],
         
         "comparisons": [
-            cl.ExactMatch("pan"),                                       # 100% match or 0% match
-            cl.ExactMatch("gst"),                                       # Binary check for Tax ID
-            cl.JaroWinklerAtThresholds("biz_name_norm", [0.9, 0.7]),    # Fuzzy match: Tiered scoring for typos
-            cl.JaroWinklerAtThresholds("address_norm", [0.8])           # Fuzzy match: Strict threshold for locations
+            cl.ExactMatch("pan"),
+            cl.ExactMatch("gst"),
+            cl.JaroWinklerAtThresholds("biz_name_norm", [0.9, 0.7]),
+            cl.JaroWinklerAtThresholds("address_norm", [0.8])
         ],
-        "retain_matching_columns": True,                                
-        "retain_intermediate_calculation_columns": True                 
+        "retain_matching_columns": True,
+        "retain_intermediate_calculation_columns": False 
     }
 
-    # INITIALIZE SPLINK & TRAIN
-    linker = Linker("master_records", settings, db_api=db_api)          # Bind the data, settings, and engine
+    # 3. Initialize & Train
+    linker = Linker("master_records", settings, db_api=db_api)
     
     print("\nStarting Unsupervised Machine Learning (EM Algorithm)...")
-    print("   -> Learning baseline random chance (U-values)...")
-    linker.training.estimate_u_using_random_sampling(max_pairs=10000)   # Calculate odds of accidental matches
+    print("   -> Estimating random baseline (U-values)...")
+    linker.training.estimate_u_using_random_sampling(max_pairs=10000)
 
-    print("   -> Learning match reliability for Names based on PAN matches (M-values)...")
-    linker.training.estimate_parameters_using_expectation_maximisation("l.pan = r.pan")               # If PAN matches, how often does Name match?
+    print("   -> Estimating parameters on PAN match...")
+    linker.training.estimate_parameters_using_expectation_maximisation("l.pan = r.pan")
     
-    print("   -> Learning match reliability for PANs based on Name matches (M-values)...")
-    linker.training.estimate_parameters_using_expectation_maximisation("l.biz_name_norm = r.biz_name_norm") 
+    print("   -> Estimating parameters on Name match...")
+    linker.training.estimate_parameters_using_expectation_maximisation("l.biz_name_norm = r.biz_name_norm")
 
-    # 5. PREDICTION & PARQUET STORAGE 
-    print(f"\nCalculating Final Match Probabilities on {count_pairs} custom pairs...")
-    splink_df = linker.inference.predict()                             
+    # 4. Predict
+    print(f"\nCalculating Final Match Probabilities on custom pairs...")
+    splink_df = linker.inference.predict()
 
-    # Save output: stream the results back to disk
-    con.execute(f"COPY ({splink_df.physical_name}) TO 'data/final_ubid_matches.parquet' (FORMAT PARQUET)") 
-    print("Saved scored matches to highly compressed Parquet: 'data/final_ubid_matches.parquet'")
+    # 5. Format Output & Export to Parquet
+    final_output_query = f"""
+        COPY (
+            SELECT 
+                uri_l AS URI_L, 
+                uri_r AS URI_R, 
+                match_probability AS score
+            FROM {splink_df.physical_name}
+        ) TO 'data/final_ubid_matches.parquet' (FORMAT PARQUET)
+    """
+    con.execute(final_output_query)
+    print("Saved clean scores to 'data/final_ubid_matches.parquet' (URI_L, URI_R, score)")
 
-    # TERMINAL OUTPUT DISPLAY
-    df_predict = splink_df.as_pandas_dataframe()                        
-    df_predict = df_predict[df_predict['match_probability'] >= 0.40]    
-    df_predict = df_predict.sort_values(by='match_probability', ascending=False) 
-
+    # 6. Terminal Output Display
     print("\n" + "="*80)
     print("                    KA-UBID TRIE + SPLINK SCORING RESULTS")
     print("="*80)
     
-    for index, row in df_predict.iterrows():                            # Loop through the final results
-        name_l = str(row['biz_name_norm_l'])[:20]                       
-        name_r = str(row['biz_name_norm_r'])[:20]                       
-        prob = row['match_probability'] * 100                           
+    preview_query = f"""
+        SELECT 
+            s.match_probability * 100 AS prob,
+            l.biz_name_norm AS name_l,
+            r.biz_name_norm AS name_r
+        FROM {splink_df.physical_name} s
+        JOIN master_records l ON s.uri_l = l.uri
+        JOIN master_records r ON s.uri_r = r.uri
+        WHERE s.match_probability >= 0.40
+        ORDER BY prob DESC
+        LIMIT 15
+    """
+    
+    preview_rows = con.execute(preview_query).fetchall()
+    
+    for row in preview_rows:
+        prob, name_l, name_r = row
+        name_l = str(name_l)[:20] if name_l else "NULL"
+        name_r = str(name_r)[:20] if name_r else "NULL"
         
         if prob >= 90.0:
-            decision = "🟢 AUTO-LINK"                                    # Extremely high confidence; merge automatically
+            decision = "🟢 AUTO-LINK"
         elif prob >= 50.0:
-            decision = "🟡 HUMAN REVIEW"                                 # Mid confidence; send for review
+            decision = "🟡 HUMAN REVIEW"
         else:
-            decision = "🔴 REJECT"                                       # Low confidence; keep entities separate
+            decision = "🔴 REJECT"
             
-        print(f"Match: {name_l:<20} <-> {name_r:<20} | Score: {prob:>6.2f}% | {decision}") 
+        print(f"Match: {name_l:<20} <-> {name_r:<20} | Score: {prob:>6.2f}% | {decision}")
 
     print("="*80)
-    print("Run Complete. System is ready for Dashboard Integration.\n")
+    print("Run Complete. Output ready for decision routing.\n")
 
 if __name__ == "__main__":
-    run_scoring_engine()                                                
+    run_scoring_engine()
