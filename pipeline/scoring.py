@@ -12,31 +12,19 @@ def run_scoring_engine():
     con = duckdb.connect(database=':memory:')
     db_api = DuckDBAPI(connection=con)
 
-    # 1. Load Data with Dummy Column Injection
+    # 1. Load Data
     try:
-        # THE FIX: We cast dummy uri1 and uri2 columns so Splink's SQL parser 
-        # doesn't panic when it sees them in the subquery.
+        # Load the updated dataset with candidate sets
         con.execute("""
             CREATE OR REPLACE VIEW master_records AS 
-            SELECT 
-                *, 
-                CAST(NULL AS BIGINT) AS uri1, 
-                CAST(NULL AS BIGINT) AS uri2 
-            FROM read_parquet('data/normalized_records.parquet')
-        """)
-        
-        con.execute("""
-            CREATE OR REPLACE VIEW candidate_pairs AS 
-            SELECT uri1, uri2 FROM read_parquet('data/candidate_pairs.parquet')
+            SELECT * FROM read_parquet('data/candidate_sets.parquet')
         """)
         
         count_records = con.execute("SELECT COUNT(*) FROM master_records").fetchone()[0]
-        count_pairs = con.execute("SELECT COUNT(*) FROM candidate_pairs").fetchone()[0]
-        print(f"Loaded {count_records} master records.")
-        print(f"Loaded {count_pairs} candidate pairs from C++ Trie engine.")
+        print(f"Loaded {count_records} master records from candidate_sets.parquet.")
         
     except duckdb.IOException as e:
-        print(f"Error loading files. Ensure C++ candidate_pairer.py and normalization have run!\nDetails: {e}")
+        print(f"Error loading files. Ensure pipeline has run to produce candidate sets!\nDetails: {e}")
         return
 
     # 2. Splink Settings
@@ -44,14 +32,22 @@ def run_scoring_engine():
         "link_type": "dedupe_only",
         "unique_id_column_name": "uri", 
         
-        # DuckDB Tuple-IN Hash Join
+        # Block on exact candidate sets
+        # Name based candidate sets are excluded for now due to problem in trie
         "blocking_rules_to_generate_predictions": [
-            "(l.uri, r.uri) IN (SELECT uri1, uri2 FROM candidate_pairs)"
+            "l.raw_id_candidate_set = r.raw_id_candidate_set",
+            "l.pin_candidate_set = r.pin_candidate_set",
+            "l.pan_candidate_set = r.pan_candidate_set",
+            "l.gst_candidate_set = r.gst_candidate_set",
+            "l.phone_candidate_set = r.phone_candidate_set"
+            # "l.biz_name_norm_candidate_set = r.biz_name_norm_candidate_set",
+            # "l.address_norm_candidate_set = r.address_norm_candidate_set"
         ],
         
         "comparisons": [
             cl.ExactMatch("pan"),
             cl.ExactMatch("gst"),
+            cl.ExactMatch("phone"),
             cl.JaroWinklerAtThresholds("biz_name_norm", [0.9, 0.7]),
             cl.JaroWinklerAtThresholds("address_norm", [0.8])
         ],
@@ -69,8 +65,11 @@ def run_scoring_engine():
     print("   -> Estimating parameters on PAN match...")
     linker.training.estimate_parameters_using_expectation_maximisation("l.pan = r.pan")
     
-    print("   -> Estimating parameters on Name match...")
-    linker.training.estimate_parameters_using_expectation_maximisation("l.biz_name_norm = r.biz_name_norm")
+    print("   -> Estimating parameters on GST match...")
+    linker.training.estimate_parameters_using_expectation_maximisation("l.gst = r.gst")
+
+    print("   -> Estimating parameters on Phone match...")
+    linker.training.estimate_parameters_using_expectation_maximisation("l.phone = r.phone")
 
     # 4. Predict
     print(f"\nCalculating Final Match Probabilities on custom pairs...")
