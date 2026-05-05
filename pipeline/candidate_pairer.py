@@ -3,7 +3,7 @@ import subprocess
 
 def run():
     input_file = "data/normalized_records.parquet"
-    output_file = "data/candidate_pairs.parquet"
+    output_file = "data/candidate_sets.parquet"
     
     if not os.path.exists(input_file):
         print(f"Error: {input_file} not found. Run normalize.py first.")
