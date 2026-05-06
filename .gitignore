@@ -13,9 +13,17 @@ __pycache__/
 *.log
 
 .vscode/
-*.so
 data
 *csv
 *txt
 build
 .idea/
+
+matcher
+
+# Data & Parquet Engine outputs 
+*.parquet
+pipeline/data/
+
+# C++ Build outputs (just in case they aren't caught by *.so)
+pipeline/trie_module.*.so
