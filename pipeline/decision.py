@@ -214,6 +214,8 @@ def run_decision_routing():
     print(f"\nDecision Routing complete!")
     print(f"  - {ubid_count} UBIDs in registry")
     print(f"  - {review_count} pairs in review queue")
+    print(f"  - {ubid_count} UBIDs in registry")
+    print(f"  - {review_count} pairs in review queue")
 
 if __name__ == "__main__":
     run_decision_routing()
