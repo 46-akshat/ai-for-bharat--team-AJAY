@@ -1,0 +1,34 @@
+name: C++ Candidate Matcher
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-cpp-matcher:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install System Dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Build and Run C++ Matcher
+        run: |
+          # Navigate to the cpp matcher directory
+          cd pipeline/cpp_matcher
+          
+          # Compile the C++ program
+          make
+          
+          # Run the executable, passing the LD_LIBRARY_PATH so DuckDB is found
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)
+          ./matcher ../data/normalized_records.parquet ../data/candidate_sets.parquet
+
+      - name: Upload Output Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-sets-result
+          path: pipeline/data/candidate_sets.parquet
+          retention-days: 1
