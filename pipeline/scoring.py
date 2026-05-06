@@ -114,11 +114,11 @@ def run_scoring_engine():
         name_r = str(name_r)[:20] if name_r else "NULL"
         
         if prob >= 90.0:
-            decision = "🟢 AUTO-LINK"
+            decision = "[AUTO-LINK]"
         elif prob >= 50.0:
-            decision = "🟡 HUMAN REVIEW"
+            decision = "[REVIEW]"
         else:
-            decision = "🔴 REJECT"
+            decision = "[REJECT]"
             
         print(f"Match: {name_l:<20} <-> {name_r:<20} | Score: {prob:>6.2f}% | {decision}")
 
