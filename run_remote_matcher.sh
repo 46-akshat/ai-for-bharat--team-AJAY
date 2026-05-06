@@ -3,7 +3,7 @@ set -e
 
 INPUT_FILE="pipeline/data/normalized_records.parquet"
 OUTPUT_DIR="pipeline/data"
-BRANCH_NAME="gh-action-run-temp"
+BRANCH_NAME="gh-action-run-temp-$(date +%s)"
 WORKFLOW_NAME="cpp_matcher.yml"
 
 echo "Checking if gh CLI is installed and authenticated..."
