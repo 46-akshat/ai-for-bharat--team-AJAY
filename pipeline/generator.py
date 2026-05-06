@@ -43,21 +43,50 @@ def generate_data():
             "phone": fake.numerify(text='##########')
         })
 
-    # 2. INJECT FALSE POSITIVES (Same PIN, Similar Name, Different PAN)
-    # We take the first 20 businesses and create a "fake twin" for them
-    for i in range(20): 
-        base = true_businesses[i]
-        # Keep the first word of the name, but change the ending
-        similar_name = base['name'].split(' ')[0] + " " + random.choice(["Logistics", "Traders", "Solutions", "Global"])
+    # # 2. INJECT FALSE POSITIVES (Same PIN, Similar Name, Different PAN)
+    # # We take the first 20 businesses and create a "fake twin" for them
+    # for i in range(20): 
+    #     base = true_businesses[i]
+    #     # Keep the first word of the name, but change the ending
+    #     similar_name = base['name'].split(' ')[0] + " " + random.choice(["Logistics", "Traders", "Solutions", "Global"])
         
-        true_businesses.append({
-            "name": similar_name,
-            "address": f"{fake.street_address()}, {random.choice(KARNATAKA_CITIES)}",
-            "pin": base['pin'], # TRICK: Same PIN
-            "pan": fake.bothify(text='?????####?').upper(), # TRICK: Different PAN
-            "gst": fake.bothify(text='29?????####?1Z?').upper(),
-            "phone": fake.numerify(text='##########')
-        })
+    #     true_businesses.append({
+    #         "name": similar_name,
+    #         "address": f"{fake.street_address()}, {random.choice(KARNATAKA_CITIES)}",
+    #         "pin": base['pin'], # TRICK: Same PIN
+    #         "pan": fake.bothify(text='?????####?').upper(), # TRICK: Different PAN
+    #         "gst": fake.bothify(text='29?????####?1Z?').upper(),
+    #         "phone": fake.numerify(text='##########')
+    #     })
+    
+    # 2. INJECT AMBIGUOUS TWINS (Forced into Review Queue)
+    # We take the first 30 businesses and create a "confusing twin" for them
+    for i in range(30): 
+        base = true_businesses[i]
+        trick_type = i % 3 # Cycle through 3 different confusion tricks
+
+        if trick_type == 0:
+            # Trick A: Same PAN, slightly different name (Score ~0.80)
+            similar_name = base['name'].split(' ')[0] + " " + random.choice(["Enterprises", "Corp", "India", "Group"])
+            true_businesses.append({**base, "name": similar_name})
+            
+        elif trick_type == 1:
+            # Trick B: Same Name, minor PAN typo (1 character off) (Score ~0.75)
+            pan = base['pan']
+            # Change the 8th character to simulate a data-entry typo
+            typo_pan = pan[:7] + random.choice("123456789") + pan[8:]
+            true_businesses.append({**base, "pan": typo_pan})
+            
+        else:
+            # Trick C: Null PAN/GST, minor address variation (Score ~0.65)
+            # Removes strong identifiers so AI has to rely on fuzzy string matching
+            altered_address = base['address'].replace("Street", "St.").replace("Road", "Rd.")
+            true_businesses.append({
+                **base, 
+                "address": altered_address, 
+                "pan": None, 
+                "gst": None
+            })
 
     depts = {"factories": "FAC", "shops": "SHP", "bescom": "BES"}
     results = {dept: [] for dept in depts}
