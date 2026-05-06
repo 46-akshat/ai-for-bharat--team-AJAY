@@ -56,7 +56,7 @@ def get_source_dept(raw_id):
 def run_decision_routing():
     print("Starting Decision Routing...")
     
-    csv_path = os.path.join(os.path.dirname(__file__), "data", "final_ubid_matches.csv")
+    csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "final_ubid_matches.csv")
     if not os.path.exists(csv_path):
         # Also try relative path for backward compatibility
         csv_path = "data/final_ubid_matches.csv"
@@ -182,8 +182,8 @@ def run_decision_routing():
     ubid_count = session.query(models.UBIDRegistry).count()
     review_count = session.query(models.ReviewQueue).filter(models.ReviewQueue.status == "pending").count()
     print(f"\nDecision Routing complete!")
-    print(f"  → {ubid_count} UBIDs in registry")
-    print(f"  → {review_count} pairs in review queue")
+    print(f"  - {ubid_count} UBIDs in registry")
+    print(f"  - {review_count} pairs in review queue")
 
 if __name__ == "__main__":
     run_decision_routing()
