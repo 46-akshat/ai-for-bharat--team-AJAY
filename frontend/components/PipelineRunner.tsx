@@ -10,8 +10,7 @@ import {
   runPipelineNormalize,
   runPipelinePair,
   runPipelineScore,
-  runPipelineDecision,
-  wipeDatabase
+  runPipelineDecision
 } from "@/lib/api";
 
 type StepResult = {
@@ -46,23 +45,6 @@ export function PipelineRunner({ setSteps }: { setSteps: (steps: PipelineStep[])
     },
     [setSteps]
   );
-
-  const handleWipe = async () => {
-    try {
-      setIsRunning(true);
-      setError(null);
-      setResults({});
-      setSteps((prev) => prev.map((s) => ({ ...s, status: "pending" })));
-      setCurrentStepIndex(-1);
-      
-      const res = await wipeDatabase();
-      alert(res.message || "Database wiped.");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsRunning(false);
-    }
-  };
 
   const runNextStep = async () => {
     if (currentStepIndex >= pipelineSequence.length - 1) return;
@@ -120,15 +102,6 @@ export function PipelineRunner({ setSteps }: { setSteps: (steps: PipelineStep[])
           <p className="text-xs text-zinc-500 mt-1">Run backend python scripts and monitor execution output</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleWipe}
-            disabled={isRunning}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-950/30 text-red-500 border border-red-900 rounded hover:bg-red-900/50 disabled:opacity-50 transition-colors"
-          >
-            <Database className="w-3.5 h-3.5" />
-            Wipe DB
-          </button>
-          
           <button
             onClick={runNextStep}
             disabled={isRunning || isComplete}
