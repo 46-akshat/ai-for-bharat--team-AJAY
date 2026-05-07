@@ -122,6 +122,72 @@ def get_ubids(limit: int = 100, db: Session = Depends(get_db)):
     """Fetch assigned UBIDs."""
     return db.query(models.UBIDRegistry).limit(limit).all()
 
+
+# ── Part B Endpoints ────────────────────────────────────────────────────────
+
+@app.get("/api/events")
+def get_events(ubid: str = None, limit: int = 100, db: Session = Depends(get_db)):
+    """
+    Fetch events from the event table.
+    Optional: ?ubid=KA-UBID-xxxxx to filter by specific business.
+    """
+    q = db.query(models.Event)
+    if ubid:
+        q = q.filter(models.Event.ubid == ubid)
+    return q.order_by(models.Event.occurred_at.desc()).limit(limit).all()
+
+
+@app.get("/api/ubids/status")
+def get_ubids_status(status: str = None, db: Session = Depends(get_db)):
+    """
+    Fetch all UBIDs with their classified status.
+    Optional: ?status=active | dormant | closed to filter.
+    Shows the result of the Part B classification engine.
+    """
+    q = db.query(models.UBIDRegistry)
+    if status:
+        if status not in ("active", "dormant", "closed"):
+            raise HTTPException(status_code=400, detail="status must be active, dormant, or closed")
+        q = q.filter(models.UBIDRegistry.status == status)
+    return q.order_by(models.UBIDRegistry.status).all()
+
+
+@app.get("/api/analytics/inactive")
+def get_inactive_businesses(days: int = 180, db: Session = Depends(get_db)):
+    """
+    Returns UBIDs that have had NO events in the last `days` days (default 180).
+    Useful for compliance queries like:
+    'Active factories in PIN 560058 not inspected in 18 months'
+    """
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import func, not_, exists
+    from sqlalchemy.orm import aliased
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    # UBIDs where the most recent event is older than cutoff OR no events at all
+    recent_event_subq = (
+        db.query(models.Event.ubid)
+        .filter(models.Event.occurred_at >= cutoff)
+        .subquery()
+    )
+
+    inactive = (
+        db.query(models.UBIDRegistry)
+        .filter(
+            ~models.UBIDRegistry.ubid.in_(
+                db.query(recent_event_subq.c.ubid)
+            )
+        )
+        .all()
+    )
+
+    return {
+        "threshold_days": days,
+        "inactive_count": len(inactive),
+        "ubids": inactive
+    }
+
 @app.delete("/api/cleanup")
 def wipe_database(db: Session = Depends(get_db)):
     """Wipes all pipeline data for a fresh run."""
