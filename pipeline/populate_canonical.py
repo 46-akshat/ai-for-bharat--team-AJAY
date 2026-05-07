@@ -18,20 +18,31 @@ engine = create_engine(DB_URL)
 def fill_canonical_table():
     print("Merging normalized tables into canonical_record...")
     
-    # FIX: Use biz_name_norm (the actual normalized column) instead of biz_name_raw
-    # The old code was: SELECT ... biz_name_raw, biz_name_raw ... (writing raw into norm!)
-    # Now correctly maps biz_name_norm → biz_name_norm
+    # TRIM quotes: raw_ids were stored with literal single-quote wrapping (e.g. 'FAC_62d547')
+    # due to pandas StringDtype serialization. Strip them on insert so lookups work correctly.
     sql_query = text("""
         TRUNCATE TABLE canonical_record;
 
         INSERT INTO canonical_record (raw_id, source_dept, biz_name_raw, biz_name_norm, address_raw, pin, pan, gst, phone)
-        SELECT raw_id, 'shops', biz_name_raw, biz_name_norm, address_raw, pin, pan, gst, phone FROM shops;
+        SELECT TRIM(BOTH '''' FROM raw_id), 'shops',
+               biz_name_raw,
+               COALESCE(biz_name_norm, biz_name_raw),
+               address_raw, pin, pan, gst, phone
+        FROM shops;
 
         INSERT INTO canonical_record (raw_id, source_dept, biz_name_raw, biz_name_norm, address_raw, pin, pan, gst, phone)
-        SELECT raw_id, 'factories', biz_name_raw, biz_name_norm, address_raw, pin, pan, gst, phone FROM factories;
+        SELECT TRIM(BOTH '''' FROM raw_id), 'factories',
+               biz_name_raw,
+               COALESCE(biz_name_norm, biz_name_raw),
+               address_raw, pin, pan, gst, phone
+        FROM factories;
 
         INSERT INTO canonical_record (raw_id, source_dept, biz_name_raw, biz_name_norm, address_raw, pin, pan, gst, phone)
-        SELECT raw_id, 'bescom', biz_name_raw, biz_name_norm, address_raw, pin, pan, gst, phone FROM bescom;
+        SELECT TRIM(BOTH '''' FROM raw_id), 'bescom',
+               biz_name_raw,
+               COALESCE(biz_name_norm, biz_name_raw),
+               address_raw, pin, pan, gst, phone
+        FROM bescom;
     """)
 
     try:
