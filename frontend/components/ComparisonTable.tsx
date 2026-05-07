@@ -12,6 +12,7 @@ interface FieldDef {
   key: keyof CanonicalRecord;
   label: string;
   mono?: boolean;
+  ignored?: boolean;
   render?: (val: string, other: string) => React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ const FIELDS: FieldDef[] = [
   {
     key: "source_dept",
     label: "Source Dept",
+    ignored: true,
     render: (val) => (
       <span
         className={cn(
@@ -30,7 +32,7 @@ const FIELDS: FieldDef[] = [
       </span>
     ),
   },
-  { key: "raw_id", label: "Raw ID", mono: true },
+  { key: "raw_id", label: "Raw ID", mono: true, ignored: true },
   { key: "biz_name_raw", label: "Business Name" },
   { key: "address_raw", label: "Address" },
   { key: "pin", label: "PIN Code", mono: true },
@@ -99,23 +101,30 @@ export function ComparisonTable({ recordA, recordB }: ComparisonTableProps) {
           {FIELDS.map((field, idx) => {
             const valA = String(recordA[field.key] ?? "—");
             const valB = String(recordB[field.key] ?? "—");
-            const match = valuesMatch(valA, valB);
+            const valuesAreSame = valuesMatch(valA, valB);
+            const match = field.ignored ? true : valuesAreSame;
 
             return (
               <tr
                 key={field.key}
                 className={cn(
                   "border-b border-zinc-800/60 transition-colors",
-                  match
-                    ? "bg-emerald-950/20 hover:bg-emerald-950/30"
-                    : "bg-red-950/10 hover:bg-red-950/20",
-                  idx % 2 === 0 && !match && "bg-red-950/15"
+                  field.ignored 
+                    ? "bg-transparent hover:bg-zinc-800/20"
+                    : match
+                      ? "bg-emerald-950/20 hover:bg-emerald-950/30"
+                      : "bg-red-950/10 hover:bg-red-950/20",
+                  idx % 2 === 0 && !match && !field.ignored && "bg-red-950/15"
                 )}
               >
                 {/* Field label */}
                 <td className="px-3 py-2 border-r border-zinc-800 align-top">
                   <div className="flex items-center gap-1.5">
-                    <MatchIndicator match={match} />
+                    {field.ignored ? (
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-zinc-700 flex-shrink-0" />
+                    ) : (
+                      <MatchIndicator match={match} />
+                    )}
                     <span className="text-[11px] text-zinc-400 font-medium whitespace-nowrap">
                       {field.label}
                     </span>
