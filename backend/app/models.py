@@ -4,24 +4,24 @@ from .database import Base
 
 class CanonicalRecord(Base):
     __tablename__ = "canonical_record"
-    id = Column(Integer, primary_key=True, index=True)
-    raw_id = Column(String, index=True)
+    raw_id = Column(String, primary_key=True, index=True)  # actual PK per schema.md
     source_dept = Column(String, index=True)
     biz_name_raw = Column(String)
     biz_name_norm = Column(String, index=True)
     address_raw = Column(String)
+    address_norm = Column(String)
     pin = Column(String, index=True)
     pan = Column(String, index=True)
     gst = Column(String, index=True)
     phone = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-# Updated source models to match your database schema
+# Source models — raw_id is the natural PK in Supabase
 class Shop(Base):
     __tablename__ = "shops"
-    id = Column(Integer, primary_key=True, index=True)
-    raw_id = Column(String)
+    raw_id = Column(String, primary_key=True, index=True)
     biz_name_raw = Column(String)
+    biz_name_norm = Column(String)
     address_raw = Column(String)
     pin = Column(String)
     pan = Column(String)
@@ -30,9 +30,9 @@ class Shop(Base):
 
 class Factory(Base):
     __tablename__ = "factories"
-    id = Column(Integer, primary_key=True, index=True)
-    raw_id = Column(String)
+    raw_id = Column(String, primary_key=True, index=True)
     biz_name_raw = Column(String)
+    biz_name_norm = Column(String)
     address_raw = Column(String)
     pin = Column(String)
     pan = Column(String)
@@ -41,9 +41,9 @@ class Factory(Base):
 
 class Bescom(Base):
     __tablename__ = "bescom"
-    id = Column(Integer, primary_key=True, index=True)
-    raw_id = Column(String)
+    raw_id = Column(String, primary_key=True, index=True)
     biz_name_raw = Column(String)
+    biz_name_norm = Column(String)
     address_raw = Column(String)
     pin = Column(String)
     pan = Column(String)
