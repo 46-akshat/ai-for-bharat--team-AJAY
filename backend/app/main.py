@@ -299,6 +299,7 @@ def wipe_database(db: Session = Depends(get_db)):
             TRUNCATE TABLE shops CASCADE;
             TRUNCATE TABLE factories CASCADE;
             TRUNCATE TABLE bescom CASCADE;
+            TRUNCATE TABLE event CASCADE;
         """))
         db.commit()
 

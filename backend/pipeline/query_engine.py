@@ -25,7 +25,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 env_path   = os.path.join(script_dir, '..', '.env')
 load_dotenv(dotenv_path=env_path)
 sys.path.append(os.path.abspath(os.path.join(script_dir, '..')))
-from backend.app import models
+from app import models
 
 # ── db ─────────────────────────────────────────────────────────────────────
 DB_URL = os.getenv("DATABASE_URL")
