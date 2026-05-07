@@ -4,7 +4,7 @@ import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PipelineStep } from "@/lib/types";
 
-const STEPS: PipelineStep[] = [
+export const DEFAULT_STEPS: PipelineStep[] = [
   {
     id: 1,
     label: "Generator",
@@ -37,11 +37,15 @@ const STEPS: PipelineStep[] = [
   },
 ];
 
-export function PipelineStepper() {
+interface PipelineStepperProps {
+  steps?: PipelineStep[];
+}
+
+export function PipelineStepper({ steps = DEFAULT_STEPS }: PipelineStepperProps) {
   return (
     <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2">
       <div className="flex items-center gap-0">
-        {STEPS.map((step, idx) => (
+        {steps.map((step, idx) => (
           <div key={step.id} className="flex items-center">
             {/* Step node */}
             <div className="flex items-center gap-1.5 px-3 py-1">
@@ -71,11 +75,12 @@ export function PipelineStepper() {
             </div>
 
             {/* Connector */}
-            {idx < STEPS.length - 1 && (
+            {idx < steps.length - 1 && (
               <div
                 className={cn(
                   "h-px w-6 flex-shrink-0",
-                  idx < 3 ? "bg-zinc-600" : "bg-zinc-800"
+                  idx < 3 ? "bg-zinc-600" : "bg-zinc-800",
+                  step.status === "done" && steps[idx + 1]?.status !== "pending" && "bg-emerald-600/50"
                 )}
               />
             )}

@@ -81,3 +81,29 @@ export async function fetchRecords(limit = 100): Promise<CanonicalRecord[]> {
   if (USE_MOCK) return [];
   return apiFetch<CanonicalRecord[]>(`/api/records?limit=${limit}`);
 }
+
+// ─── Pipeline Orchestration ──────────────────────────────────────────────────
+
+export async function runPipelineGenerate(): Promise<any> {
+  return apiFetch<any>(`/api/pipeline/generate`, { method: "POST" });
+}
+
+export async function runPipelineNormalize(): Promise<any> {
+  return apiFetch<any>(`/api/pipeline/normalize`, { method: "POST" });
+}
+
+export async function runPipelinePair(): Promise<any> {
+  return apiFetch<any>(`/api/pipeline/pair`, { method: "POST" });
+}
+
+export async function runPipelineScore(): Promise<any> {
+  return apiFetch<any>(`/api/pipeline/score`, { method: "POST" });
+}
+
+export async function runPipelineDecision(): Promise<any> {
+  return apiFetch<any>(`/api/pipeline/decision`, { method: "POST" });
+}
+
+export async function wipeDatabase(): Promise<any> {
+  return apiFetch<any>(`/api/cleanup`, { method: "DELETE" });
+}

@@ -1,9 +1,14 @@
-import { PipelineStepper } from "@/components/PipelineStepper";
-import { ReviewDashboard } from "@/components/ReviewDashboard";
-import Link from "next/link";
-import { Layers } from "lucide-react";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { PipelineStepper, DEFAULT_STEPS } from "@/components/PipelineStepper";
+import { PipelineRunner } from "@/components/PipelineRunner";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+export default function PipelinePage() {
+  const [steps, setSteps] = useState(DEFAULT_STEPS.map(s => ({ ...s, status: "pending" as const })));
+
   return (
     <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
       {/* Top bar: branding + pipeline stepper */}
@@ -14,30 +19,29 @@ export default function Home() {
             <span className="text-[13px] font-bold tracking-tight text-zinc-100">
               KA-UBID
             </span>
-            <span className="text-[9px] uppercase tracking-widest text-zinc-600">
-              Review Interface
+            <span className="text-[9px] uppercase tracking-widest text-indigo-400">
+              Orchestrator
             </span>
           </div>
           <div className="w-px h-6 bg-zinc-800" />
           <Link 
-            href="/pipeline"
-            className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-950/30 px-2 py-1 rounded border border-emerald-900 transition-colors"
+            href="/"
+            className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
           >
-            <Layers className="w-3.5 h-3.5" />
-            Run Pipeline
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Review
           </Link>
         </div>
 
         {/* Pipeline stepper fills the rest */}
-
         <div className="flex-1">
-          <PipelineStepper />
+          <PipelineStepper steps={steps} />
         </div>
       </header>
 
-      {/* Main dashboard */}
+      {/* Main Runner */}
       <main className="flex-1 overflow-hidden">
-        <ReviewDashboard />
+        <PipelineRunner setSteps={setSteps} />
       </main>
     </div>
   );
