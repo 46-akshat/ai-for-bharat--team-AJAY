@@ -50,6 +50,31 @@ export interface DecisionResponse {
   ubid: string | null;
 }
 
+// ─── Part B Types ─────────────────────────────────────────────────────────────
+
+export interface BusinessEvent {
+  event_id: string;
+  ubid: string;
+  event_type: string;
+  signal_weight: "HIGH" | "MED" | "LOW" | "CLOSURE";
+  source_dept: string;
+  occurred_at: string;
+}
+
+export interface UBIDStatus {
+  ubid: string;
+  status: "active" | "dormant" | "closed";
+  confidence_score: number;
+  created_at: string;
+  last_updated: string | null;
+}
+
+export interface InactiveResult {
+  threshold_days: number;
+  inactive_count: number;
+  ubids: UBIDStatus[];
+}
+
 // ─── Activity Log ──────────────────────────────────────────────────────────────
 
 export interface ActivityEntry {

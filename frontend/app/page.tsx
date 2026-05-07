@@ -1,7 +1,7 @@
 import { PipelineStepper } from "@/components/PipelineStepper";
 import { ReviewDashboard } from "@/components/ReviewDashboard";
 import Link from "next/link";
-import { Layers } from "lucide-react";
+import { Layers, Brain } from "lucide-react";
 
 export default function Home() {
   return (
@@ -19,12 +19,19 @@ export default function Home() {
             </span>
           </div>
           <div className="w-px h-6 bg-zinc-800" />
-          <Link 
+          <Link
             href="/pipeline"
             className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-950/30 px-2 py-1 rounded border border-emerald-900 transition-colors"
           >
             <Layers className="w-3.5 h-3.5" />
             Run Pipeline
+          </Link>
+          <Link
+            href="/intelligence"
+            className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 px-2 py-1 rounded border border-indigo-900 transition-colors"
+          >
+            <Brain className="w-3.5 h-3.5" />
+            Intelligence
           </Link>
         </div>
 

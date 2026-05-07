@@ -5,6 +5,9 @@ import type {
   DecisionResponse,
   UBIDRegistry,
   CanonicalRecord,
+  BusinessEvent,
+  UBIDStatus,
+  InactiveResult,
 } from "./types";
 import {
   MOCK_QUEUE,
@@ -106,4 +109,40 @@ export async function runPipelineDecision(): Promise<any> {
 
 export async function wipeDatabase(): Promise<any> {
   return apiFetch<any>(`/api/cleanup`, { method: "DELETE" });
+}
+
+// ─── Part B: Business Intelligence ───────────────────────────────────────────
+
+export async function fetchUBIDStatuses(
+  status?: "active" | "dormant" | "closed"
+): Promise<UBIDStatus[]> {
+  const qs = status ? `?status=${status}` : "";
+  return apiFetch<UBIDStatus[]>(`/api/ubids/status${qs}`);
+}
+
+export async function fetchEvents(
+  ubid?: string,
+  limit = 100
+): Promise<BusinessEvent[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (ubid) params.set("ubid", ubid);
+  return apiFetch<BusinessEvent[]>(`/api/events?${params}`);
+}
+
+export async function fetchInactiveBusinesses(
+  days = 180
+): Promise<InactiveResult> {
+  return apiFetch<InactiveResult>(`/api/analytics/inactive?days=${days}`);
+}
+
+export async function runGenerateEvents(): Promise<{ message: string; stdout: string }> {
+  return apiFetch<{ message: string; stdout: string }>(`/api/pipeline/generate-events`, {
+    method: "POST",
+  });
+}
+
+export async function runClassifyStatuses(): Promise<{ message: string; stdout: string }> {
+  return apiFetch<{ message: string; stdout: string }>(`/api/pipeline/classify`, {
+    method: "POST",
+  });
 }

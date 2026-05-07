@@ -412,3 +412,13 @@ def run_step_decision():
         "stdout": stdout,
         "data": "Decisions applied. Check PostgreSQL DB review_queue and ubid_registry tables."
     }
+
+@app.post("/api/pipeline/generate-events")
+def run_step_generate_events():
+    stdout = run_pipeline_script("generate_events.py")
+    return {"message": "Event generation complete", "stdout": stdout}
+
+@app.post("/api/pipeline/classify")
+def run_step_classify():
+    stdout = run_pipeline_script("query_engine.py")
+    return {"message": "Classification complete", "stdout": stdout}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PipelineStepper, DEFAULT_STEPS } from "@/components/PipelineStepper";
 import { PipelineRunner } from "@/components/PipelineRunner";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Brain } from "lucide-react";
 
 export default function PipelinePage() {
   const [steps, setSteps] = useState(DEFAULT_STEPS.map(s => ({ ...s, status: "pending" as const })));
@@ -24,12 +24,19 @@ export default function PipelinePage() {
             </span>
           </div>
           <div className="w-px h-6 bg-zinc-800" />
-          <Link 
+          <Link
             href="/"
             className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Review
+          </Link>
+          <Link
+            href="/intelligence"
+            className="flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-950/30 px-2 py-1 rounded border border-indigo-900 transition-colors"
+          >
+            <Brain className="w-3.5 h-3.5" />
+            Intelligence
           </Link>
         </div>
 
