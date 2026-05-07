@@ -1,3 +1,7 @@
+import os
+import sys
+import subprocess
+import pandas as pd
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -235,3 +239,100 @@ def wipe_database(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==============================================================================
+# PIPELINE ORCHESTRATION ENDPOINTS
+# ==============================================================================
+
+# Derive the absolute path to the backend/pipeline directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PIPELINE_DIR = os.path.join(BASE_DIR, "pipeline")
+DATA_DIR = os.path.join(PIPELINE_DIR, "data")
+
+def run_pipeline_script(script_name: str):
+    """Executes a python script inside the pipeline folder."""
+    try:
+        result = subprocess.run(
+            [sys.executable, script_name],
+            cwd=PIPELINE_DIR,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Script {script_name} failed: {e.stderr}")
+
+def read_pipeline_data(filename: str, limit: int = 100):
+    """Reads CSV or Parquet from pipeline/data and returns JSON-compatible dict."""
+    filepath = os.path.join(DATA_DIR, filename)
+    if not os.path.exists(filepath):
+        return []
+    
+    try:
+        if filename.endswith(".csv"):
+            df = pd.read_csv(filepath)
+        elif filename.endswith(".parquet"):
+            df = pd.read_parquet(filepath)
+        else:
+            return []
+            
+        # Clean up NaNs for JSON serialization
+        df = df.fillna("")
+        
+        # Convert values that might break JSON (like NumPy ints)
+        df = df.astype(str)
+        
+        return df.head(limit).to_dict(orient="records")
+    except Exception as e:
+        print(f"Failed to read {filename}: {e}")
+        return []
+
+@app.post("/api/pipeline/generate")
+def run_step_generate():
+    stdout = run_pipeline_script("generator.py")
+    return {
+        "message": "Generation complete",
+        "stdout": stdout,
+        "data": {
+            "factories": read_pipeline_data("factories.csv", limit=50),
+            "shops": read_pipeline_data("shops.csv", limit=50),
+            "bescom": read_pipeline_data("bescom.csv", limit=50)
+        }
+    }
+
+@app.post("/api/pipeline/normalize")
+def run_step_normalize():
+    stdout = run_pipeline_script("normalize.py")
+    return {
+        "message": "Normalization complete",
+        "stdout": stdout,
+        "data": read_pipeline_data("normalized_records.parquet", limit=50)
+    }
+
+@app.post("/api/pipeline/pair")
+def run_step_pair():
+    stdout = run_pipeline_script("candidate_pairer.py")
+    return {
+        "message": "Pairing complete",
+        "stdout": stdout,
+        "data": read_pipeline_data("candidate_sets.parquet", limit=50)
+    }
+
+@app.post("/api/pipeline/score")
+def run_step_score():
+    stdout = run_pipeline_script("scoring.py")
+    return {
+        "message": "Scoring complete",
+        "stdout": stdout,
+        "data": read_pipeline_data("final_ubid_matches.parquet", limit=50)
+    }
+
+@app.post("/api/pipeline/decision")
+def run_step_decision():
+    stdout = run_pipeline_script("decision.py")
+    return {
+        "message": "Decision logic complete",
+        "stdout": stdout,
+        "data": "Decisions applied. Check PostgreSQL DB review_queue and ubid_registry tables."
+    }

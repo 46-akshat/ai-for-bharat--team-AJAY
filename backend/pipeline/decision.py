@@ -9,7 +9,7 @@ import json
 from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from backend.app import models
+from app import models
 
 # Map raw_id prefixes to source department names
 DEPT_PREFIX_MAP = {
