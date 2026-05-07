@@ -6,23 +6,20 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function scoreColor(score: number): string {
-  if (score >= 0.9) return "text-emerald-400";
-  if (score >= 0.75) return "text-yellow-400";
-  if (score >= 0.5) return "text-orange-400";
+  if (score >= 0.76) return "text-emerald-400";
+  if (score >= 0.63) return "text-yellow-400";
   return "text-red-400";
 }
 
 export function scoreBg(score: number): string {
-  if (score >= 0.9) return "bg-emerald-950 border-emerald-800";
-  if (score >= 0.75) return "bg-yellow-950 border-yellow-800";
-  if (score >= 0.5) return "bg-orange-950 border-orange-800";
+  if (score >= 0.76) return "bg-emerald-950 border-emerald-800";
+  if (score >= 0.63) return "bg-yellow-950 border-yellow-800";
   return "bg-red-950 border-red-800";
 }
 
 export function scoreLabel(score: number): string {
-  if (score >= 0.9) return "HIGH";
-  if (score >= 0.75) return "MED-HIGH";
-  if (score >= 0.5) return "MEDIUM";
+  if (score >= 0.76) return "HIGH";
+  if (score >= 0.63) return "MEDIUM";
   return "LOW";
 }
 
