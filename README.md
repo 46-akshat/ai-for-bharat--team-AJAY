@@ -11,7 +11,6 @@ Ambiguous matches (Splink score 50–89%) are routed to a human reviewer via a p
 https://youtu.be/8u-ZosUvJp4?si=nComwIfAupkcwDyz
 
 
-> Dark, data-dense reviewer UI — side-by-side record comparison with field-level diff highlighting, Bayes factor breakdown, and keyboard-driven decisions.
 
 ---
 
