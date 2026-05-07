@@ -8,7 +8,8 @@ Ambiguous matches (Splink score 50–89%) are routed to a human reviewer via a p
 
 ## Demo
 
-![Review Dashboard](https://placehold.co/900x500/0f0f0f/3f3f46?text=KA-UBID+Review+Dashboard)
+https://youtu.be/8u-ZosUvJp4?si=nComwIfAupkcwDyz
+
 
 > Dark, data-dense reviewer UI — side-by-side record comparison with field-level diff highlighting, Bayes factor breakdown, and keyboard-driven decisions.
 
