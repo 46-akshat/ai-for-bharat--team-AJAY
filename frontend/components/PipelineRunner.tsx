@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Play, Database, RefreshCw, Layers, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PipelineStep } from "@/lib/types";
-import { JsonViewer } from "./JsonViewer";
+import { PipelineTable } from "./PipelineTable";
 import {
   runPipelineGenerate,
   runPipelineNormalize,
@@ -153,16 +153,16 @@ export function PipelineRunner({ setSteps }: { setSteps: (steps: PipelineStep[])
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-auto p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="flex-1 overflow-hidden p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
         
         {/* Results Panel */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:col-span-1 overflow-hidden">
           <h2 className="text-sm font-semibold text-zinc-400">Execution Log</h2>
           
-          <div className="flex-1 min-h-[300px] border border-zinc-800 rounded bg-zinc-950 p-3 overflow-auto font-mono text-[11px] text-zinc-500 leading-relaxed">
+          <div className="flex-1 min-h-0 border border-zinc-800 rounded bg-zinc-950 p-3 overflow-y-auto font-mono text-[11px] text-zinc-500 leading-relaxed">
             {Object.keys(results).length === 0 && !isRunning && (
               <div className="flex items-center justify-center h-full text-zinc-700">
-                Click "Run Pipeline" to start execution
+                Click "Start Pipeline" to begin
               </div>
             )}
             
@@ -183,14 +183,12 @@ export function PipelineRunner({ setSteps }: { setSteps: (steps: PipelineStep[])
         </div>
 
         {/* Data Sample Panel */}
-        <div className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold text-zinc-400">Data Sample</h2>
+        <div className="flex flex-col gap-4 lg:col-span-2 overflow-hidden">
+          <h2 className="text-sm font-semibold text-zinc-400">Data State</h2>
           
-          <JsonViewer 
-            title={activeResult ? "Latest Script Output" : "Idle"} 
-            data={activeResult ? activeResult.data : { message: "Waiting for pipeline step data..." }}
-            className="flex-1 min-h-[300px]"
-          />
+          <div className="flex-1 border border-zinc-800 bg-zinc-950 rounded-md overflow-hidden">
+            <PipelineTable stepIndex={currentStepIndex} results={results} />
+          </div>
         </div>
       </div>
     </div>
