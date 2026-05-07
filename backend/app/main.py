@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from .database import engine, SessionLocal
 from . import models
 
@@ -186,3 +187,23 @@ def get_inactive_businesses(days: int = 180, db: Session = Depends(get_db)):
         "inactive_count": len(inactive),
         "ubids": inactive
     }
+
+@app.delete("/api/cleanup")
+def wipe_database(db: Session = Depends(get_db)):
+    """Wipes all pipeline data for a fresh run."""
+    try:
+        # Cascade will handle foreign key dependencies
+        db.execute(text("""
+            TRUNCATE TABLE review_queue CASCADE;
+            TRUNCATE TABLE record_ubid_linkage CASCADE;
+            TRUNCATE TABLE ubid_registry CASCADE;
+            TRUNCATE TABLE canonical_record CASCADE;
+            TRUNCATE TABLE shops CASCADE;
+            TRUNCATE TABLE factories CASCADE;
+            TRUNCATE TABLE bescom CASCADE;
+        """))
+        db.commit()
+        return {"message": "✅ Database completely wiped! Ready for a fresh pipeline run."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
