@@ -9,6 +9,7 @@ class CanonicalRecord(Base):
     biz_name_raw = Column(String)
     biz_name_norm = Column(String, index=True)
     address_raw = Column(String)
+    address_norm = Column(String)
     pin = Column(String, index=True)
     pan = Column(String, index=True)
     gst = Column(String, index=True)

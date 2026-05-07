@@ -42,6 +42,21 @@ def normalize_data():
     combined_df['biz_name_norm'] = combined_df['biz_name_raw'].apply(clean_text).astype('string')
     combined_df['address_norm'] = combined_df['address_raw'].apply(clean_text).astype('string')
 
+    # Create and export canonical_records.csv matching CanonicalRecord model
+    canonical_df = combined_df.copy()
+    def get_dept(x):
+        if str(x).startswith('FAC'): return 'factories'
+        if str(x).startswith('SHP'): return 'shops'
+        if str(x).startswith('BES'): return 'bescom'
+        return 'unknown'
+    canonical_df['source_dept'] = canonical_df['raw_id'].apply(get_dept)
+    canonical_cols = [
+        'raw_id', 'source_dept', 'biz_name_raw', 'biz_name_norm', 
+        'address_raw', 'address_norm', 'pin', 'pan', 'gst', 'phone'
+    ]
+    canonical_df[canonical_cols].to_csv("data/canonical_records.csv", index=False)
+    print(f" Exported {len(canonical_df)} rows to data/canonical_records.csv")
+
     # Drop the raw columns
     combined_df = combined_df.drop(columns=['biz_name_raw', 'address_raw'])
 
