@@ -235,7 +235,16 @@ def wipe_database(db: Session = Depends(get_db)):
             TRUNCATE TABLE bescom CASCADE;
         """))
         db.commit()
-        return {"message": "✅ Database completely wiped! Ready for a fresh pipeline run."}
+
+        # Clean up intermediate files in pipeline/data
+        target_data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pipeline", "data")
+        if os.path.exists(target_data_dir):
+            for file_name in os.listdir(target_data_dir):
+                file_path = os.path.join(target_data_dir, file_name)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+
+        return {"message": "✅ Database and local pipeline data completely wiped! Ready for a fresh pipeline run."}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -303,10 +312,11 @@ def run_step_generate():
 
 @app.post("/api/pipeline/normalize")
 def run_step_normalize():
-    stdout = run_pipeline_script("normalize.py")
+    stdout_norm = run_pipeline_script("normalize.py")
+    stdout_load = run_pipeline_script("loader.py")
     return {
-        "message": "Normalization complete",
-        "stdout": stdout,
+        "message": "Normalization and Database Load complete",
+        "stdout": stdout_norm + "\n" + stdout_load,
         "data": read_pipeline_data("normalized_records.parquet", limit=50)
     }
 
